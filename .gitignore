@@ -1,0 +1,6 @@
+.idea/
+build/
+certificate/
+gradle/
+.gradle/
+.intellijPlatform/

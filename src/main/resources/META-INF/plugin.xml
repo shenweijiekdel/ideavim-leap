@@ -1,0 +1,139 @@
+<idea-plugin>
+    <id>com.github.shenweijie.vim-leap</id>
+    <name>vim-leap</name>
+    <vendor email="shenweijie@example.com">shenweijie</vendor>
+
+    <description><![CDATA[
+        <h2>vim-leap — leap.nvim for IdeaVim</h2>
+        <p>
+          Full port of <a href="https://github.com/ggandor/leap.nvim">leap.nvim</a>
+          (and <a href="https://github.com/ggandor/flit.nvim">flit.nvim</a>) for IdeaVim.
+          The fastest way to move anywhere on screen without counting lines or reaching for the mouse.
+        </p>
+
+        <h2>Zero-surprise labels</h2>
+        <p>
+          The moment you type the <strong>first character</strong>, vim-leap groups every candidate
+          match by its second character and assigns final labels — the same labels you will press
+          after typing the second character. <strong>Labels never change between the two input
+          phases.</strong> By the time you decide which second character to type, the label for
+          your target is already in front of you. No re-reading the screen, no surprises.
+        </p>
+
+        <h2>Features</h2>
+        <ul>
+          <li><strong>2-char leap</strong> — type two chars, jump to a labeled match instantly</li>
+          <li><strong>Stable-label preview</strong> — labels are fixed after the first character</li>
+          <li><strong>Safe-label autojump</strong> — cursor jumps to the nearest match automatically when matches are few; others stay labeled</li>
+          <li><strong>Label groups</strong> — Space / Backspace cycles through groups when there are many matches</li>
+          <li><strong>Traversal mode</strong> — Enter / Backspace steps through matches after an autojump</li>
+          <li><strong>Flit (f/F/t/T)</strong> — single-char labelled motions with ; / , repeat</li>
+          <li><strong>Equivalence classes</strong> — Space matches any whitespace by default</li>
+          <li><strong>Till motions</strong> — land one character before/after the match</li>
+          <li><strong>Remote operation</strong> — jump, operate, return to origin</li>
+          <li><strong>PSI structural selection</strong> — label ancestor nodes, select a structural range</li>
+          <li><strong>Multi-split search</strong> — searches all visible editor splits at once</li>
+        </ul>
+
+        <h2>Setup (~/.ideavimrc)</h2>
+        <pre>
+" 2-char leap
+nmap s  &lt;Action&gt;(leap.forward)
+nmap S  &lt;Action&gt;(leap.backward)
+xmap s  &lt;Action&gt;(leap.forward)
+xmap S  &lt;Action&gt;(leap.backward)
+
+" Till motions
+nmap z  &lt;Action&gt;(leap.forward_till)
+nmap Z  &lt;Action&gt;(leap.backward_till)
+xmap z  &lt;Action&gt;(leap.forward_till)
+xmap Z  &lt;Action&gt;(leap.backward_till)
+
+" Flit — labelled f/F/t/T with ; / , repeat
+nmap f  &lt;Action&gt;(leap.flit_f)
+nmap F  &lt;Action&gt;(leap.flit_f_backward)
+xmap f  &lt;Action&gt;(leap.flit_f)
+xmap F  &lt;Action&gt;(leap.flit_f_backward)
+nmap t  &lt;Action&gt;(leap.flit_t)
+nmap T  &lt;Action&gt;(leap.flit_t_backward)
+xmap t  &lt;Action&gt;(leap.flit_t)
+xmap T  &lt;Action&gt;(leap.flit_t_backward)
+nmap ;  &lt;Action&gt;(leap.flit_repeat)
+nmap ,  &lt;Action&gt;(leap.flit_repeat_backward)
+
+" PSI structural selection
+nmap gs &lt;Action&gt;(leap.treesitter)
+xmap gs &lt;Action&gt;(leap.treesitter)
+
+" Remote leap
+nmap r  &lt;Action&gt;(leap.remote)
+        </pre>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.github.shenweijie.vimleap.LeapConfig"/>
+        <applicationConfigurable
+                parentId="tools"
+                instance="com.github.shenweijie.vimleap.LeapConfigurable"
+                id="com.github.shenweijie.vimleap.LeapConfigurable"
+                displayName="vim-leap"/>
+        <notificationGroup id="vim-leap" displayType="BALLOON" isLogByDefault="true"/>
+    </extensions>
+
+    <actions>
+        <action id="leap.forward"
+                class="com.github.shenweijie.vimleap.ForwardAction"
+                text="Leap Forward"
+                description="Type 2 chars → labels → jump. Forward from cursor."/>
+        <action id="leap.backward"
+                class="com.github.shenweijie.vimleap.BackwardAction"
+                text="Leap Backward"
+                description="Type 2 chars → labels → jump. Backward from cursor."/>
+        <action id="leap.anywhere"
+                class="com.github.shenweijie.vimleap.AnywhereAction"
+                text="Leap Anywhere"
+                description="Bidirectional leap in the current window. Targets sorted by Euclidean distance."/>
+        <action id="leap.forward_till"
+                class="com.github.shenweijie.vimleap.ForwardTillAction"
+                text="Leap Forward Till"
+                description="Leap forward; land one character before the match (like vim t)."/>
+        <action id="leap.backward_till"
+                class="com.github.shenweijie.vimleap.BackwardTillAction"
+                text="Leap Backward Till"
+                description="Leap backward; land one character after the match (like vim T)."/>
+        <action id="leap.treesitter"
+                class="com.github.shenweijie.vimleap.TreesitterAction"
+                text="Leap Treesitter"
+                description="Label PSI ancestor nodes and jump/select a structural range."/>
+        <action id="leap.remote"
+                class="com.github.shenweijie.vimleap.RemoteAction"
+                text="Leap Remote"
+                description="Jump to a label, execute a motion there, then return to origin."/>
+        <action id="leap.flit_f"
+                class="com.github.shenweijie.vimleap.FlitFAction"
+                text="Leap Flit f"
+                description="Flit-style f: type one char, labels appear for all forward matches."/>
+        <action id="leap.flit_f_backward"
+                class="com.github.shenweijie.vimleap.FlitFBackwardAction"
+                text="Leap Flit F"
+                description="Flit-style F: type one char, labels appear for all backward matches."/>
+        <action id="leap.flit_t"
+                class="com.github.shenweijie.vimleap.FlitTAction"
+                text="Leap Flit t"
+                description="Flit-style t: type one char, land one character before each forward match."/>
+        <action id="leap.flit_t_backward"
+                class="com.github.shenweijie.vimleap.FlitTBackwardAction"
+                text="Leap Flit T"
+                description="Flit-style T: type one char, land one character after each backward match."/>
+        <action id="leap.flit_repeat"
+                class="com.github.shenweijie.vimleap.FlitRepeatAction"
+                text="Leap Flit Repeat"
+                description="Repeat last flit jump in the same direction (like vim ;)."/>
+        <action id="leap.flit_repeat_backward"
+                class="com.github.shenweijie.vimleap.FlitRepeatBackwardAction"
+                text="Leap Flit Repeat Backward"
+                description="Repeat last flit jump in the opposite direction (like vim ,)."/>
+    </actions>
+</idea-plugin>
