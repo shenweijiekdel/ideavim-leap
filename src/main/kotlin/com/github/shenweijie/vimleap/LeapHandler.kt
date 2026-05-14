@@ -3,7 +3,6 @@ package com.github.shenweijie.vimleap
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteIntentReadAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
@@ -56,6 +55,7 @@ object LeapHandler {
     private var traversalIdx = 0       // index in targets[] during TRAVERSE phase
     private var originEditor: Editor? = null
     private var originOffset = 0
+    private var visualAnchor = -1   // ≥0 when started from visual mode; fixed end of selection
     private var savedDataContext: DataContext? = null
 
     // ── repeat state ───────────────────────────────────────────────────────────
@@ -86,6 +86,7 @@ object LeapHandler {
         autojumpIdx = -1; groupOffset = 0; traversalIdx = 0
         originEditor = editor
         originOffset = editor.caretModel.offset
+        visualAnchor = captureVisualAnchor(editor)
         installHandlers(editor)
         showBackdrop(editor)
     }
@@ -98,6 +99,7 @@ object LeapHandler {
         char1 = ""; char2 = ""
         originEditor = editor
         originOffset = editor.caretModel.offset
+        visualAnchor = -1
         autojumpIdx = -1; groupOffset = 0; traversalIdx = 0
 
         targets = marks.map { m -> Target(editor, m.offset, m.label, 1) }
@@ -114,6 +116,7 @@ object LeapHandler {
         clearCanvases()
         targets = emptyList(); sublists = emptyMap()
         char1 = ""; char2 = ""
+        visualAnchor = -1
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -544,19 +547,19 @@ object LeapHandler {
     // Remote
     // ══════════════════════════════════════════════════════════════════════════
 
-    fun startFlitRepeat(event: AnActionEvent, reversed: Boolean) {
+    fun startRepeat(event: AnActionEvent, reversed: Boolean) {
         val editor = event.getData(CommonDataKeys.EDITOR) ?: return
         val ls = lastSearch ?: return
-        if (!ls.mode.singleChar) return
         if (isActive) stop(editor)
         isActive = true
         mode = if (reversed) ls.mode.flipped() else ls.mode
         phase = Phase.CHAR1
-        char1 = ls.char1; char2 = ""
-        targets = emptyList()
+        char1 = ls.char1; char2 = ls.char2
+        targets = emptyList(); sublists = emptyMap()
         autojumpIdx = -1; groupOffset = 0; traversalIdx = 0
         originEditor = editor
         originOffset = editor.caretModel.offset
+        visualAnchor = captureVisualAnchor(editor)
         installHandlers(editor)
         showBackdrop(editor)
         computeAndShow(editor)
@@ -581,31 +584,42 @@ object LeapHandler {
 
     private fun jumpTo(editor: Editor, offset: Int) {
         val clamped = offset.coerceIn(0, editor.document.textLength - 1)
-        ApplicationManager.getApplication().invokeLater {
-            WriteIntentReadAction.run(Runnable {
-                editor.caretModel.moveToOffset(clamped)
-                editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
-            })
-        }
+        val anchor = visualAnchor
+        WriteIntentReadAction.run(Runnable {
+            editor.caretModel.moveToOffset(clamped)
+            if (anchor >= 0) {
+                val from = minOf(anchor, clamped)
+                val to = maxOf(anchor, clamped)
+                editor.selectionModel.setSelection(from, to + 1)
+            }
+            editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+        })
     }
 
     private fun selectRange(editor: Editor, start: Int, end: Int) {
-        ApplicationManager.getApplication().invokeLater {
-            WriteIntentReadAction.run(Runnable {
-                editor.caretModel.moveToOffset(end.coerceIn(0, editor.document.textLength))
-                editor.selectionModel.setSelection(
-                    start.coerceIn(0, editor.document.textLength),
-                    end.coerceIn(0, editor.document.textLength),
-                )
-                editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
-            })
-        }
+        WriteIntentReadAction.run(Runnable {
+            editor.caretModel.moveToOffset(end.coerceIn(0, editor.document.textLength))
+            editor.selectionModel.setSelection(
+                start.coerceIn(0, editor.document.textLength),
+                end.coerceIn(0, editor.document.textLength),
+            )
+            editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
+        })
     }
 
     private fun adjustedOffset(offset: Int, m: LeapMode): Int = when (m.offset) {
         -1 -> (offset - 1).coerceAtLeast(0)
         +1 -> offset + 1
         else -> offset
+    }
+
+    private fun captureVisualAnchor(editor: Editor): Int {
+        val sel = editor.selectionModel
+        if (!sel.hasSelection()) return -1
+        val caretOff = editor.caretModel.offset
+        val selStart = sel.selectionStart
+        val selEnd = sel.selectionEnd
+        return if (caretOff <= selStart) selEnd - 1 else selStart
     }
 
     // ══════════════════════════════════════════════════════════════════════════

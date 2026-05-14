@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.shenweijie"
-version = "0.1.0"
+version = "0.2.0"
 
 repositories {
     mavenCentral()
@@ -26,19 +26,14 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         name = "vim-leap"
-        version = "0.1.0"
+        version = "0.2.0"
         description = "leap.nvim port for IdeaVim — 2-char search labels, safe-label autojump, label groups, traversal, equivalence classes, remote operation."
         changeNotes = """
             <ul>
-              <li>Initial release</li>
-              <li>2-char leap jump: forward, backward, bidirectional</li>
-              <li>Preview after char1, safe-label autojump, label groups (Space/Backspace)</li>
-              <li>Traversal mode (Enter/Backspace to step through matches)</li>
-              <li>Enter shortcut: repeat last search or jump to nearest</li>
-              <li>Equivalence classes (space/tab/newline)</li>
-              <li>Till motions (forward/backward offset)</li>
-              <li>Remote operation: jump, operate, return</li>
-              <li>PSI treesitter-style structural selection</li>
+              <li>Flit (f/F/t/T): single-char labelled motions with ; / , repeat — port of flit.nvim</li>
+              <li>; / , repeat now works for all leap modes (s/S as well as f/F/t/T)</li>
+              <li>Visual mode: selection extends live with cursor during leap session</li>
+              <li>Stable-label preview: labels are fixed after char1, never reassigned on char2</li>
             </ul>
         """.trimIndent()
         ideaVersion {

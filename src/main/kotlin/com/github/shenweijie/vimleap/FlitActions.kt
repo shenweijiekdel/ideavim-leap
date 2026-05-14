@@ -19,9 +19,9 @@ class FlitTBackwardAction : BaseAction() {
 }
 
 class FlitRepeatAction : BaseAction() {
-    override fun actionPerformed(e: AnActionEvent) = LeapHandler.startFlitRepeat(e, reversed = false)
+    override fun actionPerformed(e: AnActionEvent) = LeapHandler.startRepeat(e, reversed = false)
 }
 
 class FlitRepeatBackwardAction : BaseAction() {
-    override fun actionPerformed(e: AnActionEvent) = LeapHandler.startFlitRepeat(e, reversed = true)
+    override fun actionPerformed(e: AnActionEvent) = LeapHandler.startRepeat(e, reversed = true)
 }

@@ -20,10 +20,14 @@ enum class LeapMode(
     TREESITTER;
 
     fun flipped(): LeapMode = when (this) {
+        FORWARD          -> BACKWARD
+        BACKWARD         -> FORWARD
+        FORWARD_TILL     -> BACKWARD_TILL
+        BACKWARD_TILL    -> FORWARD_TILL
         FLIT_F           -> FLIT_F_BACKWARD
         FLIT_F_BACKWARD  -> FLIT_F
         FLIT_T           -> FLIT_T_BACKWARD
         FLIT_T_BACKWARD  -> FLIT_T
-        else             -> this
+        else             -> this   // ANYWHERE, REMOTE, TREESITTER — no flip
     }
 }

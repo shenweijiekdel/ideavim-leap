@@ -40,12 +40,6 @@ xmap S  <Action>(leap.backward)
 "nmap s  <Action>(leap.anywhere)
 "xmap s  <Action>(leap.anywhere)
 
-" Till motions (land before/after the match)
-nmap z  <Action>(leap.forward_till)
-nmap Z  <Action>(leap.backward_till)
-xmap z  <Action>(leap.forward_till)
-xmap Z  <Action>(leap.backward_till)
-
 " Flit — labelled f/F/t/T
 nmap f  <Action>(leap.flit_f)
 nmap F  <Action>(leap.flit_f_backward)
@@ -62,8 +56,12 @@ nmap ,  <Action>(leap.flit_repeat_backward)
 nmap gs <Action>(leap.treesitter)
 xmap gs <Action>(leap.treesitter)
 
-" Remote leap — jump, operate, return
-nmap r  <Action>(leap.remote)
+" Till motions — z/Z conflict with fold; bind to a free key if desired:
+"   nmap <key>  <Action>(leap.forward_till)
+"   nmap <key>  <Action>(leap.backward_till)
+
+" Remote leap — r conflicts with replace-char; bind to a free key if desired:
+"   nmap <key>  <Action>(leap.remote)
 ```
 
 ## All actions

@@ -40,12 +40,6 @@ xmap S  <Action>(leap.backward)
 "nmap s  <Action>(leap.anywhere)
 "xmap s  <Action>(leap.anywhere)
 
-" Till 模式（落点在匹配前/后一字符）
-nmap z  <Action>(leap.forward_till)
-nmap Z  <Action>(leap.backward_till)
-xmap z  <Action>(leap.forward_till)
-xmap Z  <Action>(leap.backward_till)
-
 " Flit — 带 label 的 f/F/t/T
 nmap f  <Action>(leap.flit_f)
 nmap F  <Action>(leap.flit_f_backward)
@@ -62,8 +56,12 @@ nmap ,  <Action>(leap.flit_repeat_backward)
 nmap gs <Action>(leap.treesitter)
 xmap gs <Action>(leap.treesitter)
 
-" 远程 leap — 跳转、操作、返回
-nmap r  <Action>(leap.remote)
+" Till 模式 — z/Z 与折叠冲突，可绑定到空闲按键：
+"   nmap <key>  <Action>(leap.forward_till)
+"   nmap <key>  <Action>(leap.backward_till)
+
+" 远程 leap — r 与 replace-char 冲突，可绑定到空闲按键：
+"   nmap <key>  <Action>(leap.remote)
 ```
 
 ## 全部 Action

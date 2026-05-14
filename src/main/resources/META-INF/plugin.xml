@@ -129,11 +129,11 @@ nmap r  &lt;Action&gt;(leap.remote)
                 description="Flit-style T: type one char, land one character after each backward match."/>
         <action id="leap.flit_repeat"
                 class="com.github.shenweijie.vimleap.FlitRepeatAction"
-                text="Leap Flit Repeat"
-                description="Repeat last flit jump in the same direction (like vim ;)."/>
+                text="Leap Repeat"
+                description="Repeat last leap/flit jump in the same direction (like vim ;)."/>
         <action id="leap.flit_repeat_backward"
                 class="com.github.shenweijie.vimleap.FlitRepeatBackwardAction"
-                text="Leap Flit Repeat Backward"
-                description="Repeat last flit jump in the opposite direction (like vim ,)."/>
+                text="Leap Repeat Backward"
+                description="Repeat last leap/flit jump in the opposite direction (like vim ,)."/>
     </actions>
 </idea-plugin>
