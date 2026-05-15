@@ -39,7 +39,7 @@ class LeapConfig : PersistentStateComponent<LeapConfig.ConfigState> {
         var matchBg: String = "#1e2030",
         // Nearest/autojump target
         var matchNearestFg: String = "#000000",
-        var matchNearestBg: String = "#ccff88",
+        var matchNearestBg: String = "#ff9900",
     )
 
     private var state = ConfigState()

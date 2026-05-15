@@ -3,6 +3,7 @@ package com.github.shenweijie.vimleap
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteIntentReadAction
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
@@ -60,6 +61,7 @@ object LeapHandler {
 
     // ── repeat state ───────────────────────────────────────────────────────────
     private var lastSearch: SavedSearch? = null
+    private var sessionGen = 0   // incremented on every new session; used to cancel stale re-feeds
 
     // ── remote state ──────────────────────────────────────────────────────────
     var remoteOriginEditor: Editor? = null
@@ -79,6 +81,7 @@ object LeapHandler {
         val editor = event.getData(CommonDataKeys.EDITOR) ?: return
         if (isActive) stop(editor)
         isActive = true
+        sessionGen++
         mode = leapMode
         phase = Phase.CHAR1
         char1 = ""; char2 = ""
@@ -94,6 +97,7 @@ object LeapHandler {
     fun startWithMarks(editor: Editor, marks: List<MarksCanvas.Mark>, leapMode: LeapMode) {
         if (isActive) stop(editor)
         isActive = true
+        sessionGen++
         mode = leapMode
         phase = Phase.SELECT
         char1 = ""; char2 = ""
@@ -108,11 +112,11 @@ object LeapHandler {
         updateCanvas(editor, marks)
     }
 
-    fun stop(editor: Editor) {
+    fun stop(editor: Editor, keepBackdrop: Boolean = false) {
         if (!isActive) return
         isActive = false
         removeHandlers()
-        clearBackdrops()
+        if (!keepBackdrop) clearBackdrops()
         clearCanvases()
         targets = emptyList(); sublists = emptyMap()
         char1 = ""; char2 = ""
@@ -199,24 +203,36 @@ object LeapHandler {
             refreshSelectDisplay(editor)
             return
         }
-        // No label matched — if we auto-jumped, accept position and re-feed the key
-        if (autojumpIdx >= 0) {
-            val handler = oldTypedHandler
-            val ctx = savedDataContext
-            stop(editor)
-            if (handler != null && ctx != null) handler.execute(editor, char, ctx)
-            return
-        }
-        stop(editor)
+        // No label matched — stop session and re-feed the key.
+        // keepBackdrop=true keeps the dim overlay alive across the EDT boundary so there
+        // is no visible flash when the next session's showBackdrop reuses it.
+        // After execute: if no new session started (e.g. lastSearch==null), clear orphaned backdrop.
+        val handler = oldTypedHandler
+        val ctx = savedDataContext
+        val gen = sessionGen
+        stop(editor, keepBackdrop = true)
+        if (handler != null && ctx != null)
+            ApplicationManager.getApplication().invokeLater {
+                if (sessionGen == gen) {
+                    handler.execute(editor, char, ctx)
+                    if (sessionGen == gen) clearBackdrops()  // no new session → clean up
+                }
+            }
     }
 
     // ── TRAVERSE: Enter/Backspace to step, any other key exits ─────────────────
     private fun onTraverse(editor: Editor, char: Char) {
-        // Any typed char exits traversal and re-feeds
         val handler = oldTypedHandler
         val ctx = savedDataContext
-        stop(editor)
-        if (handler != null && ctx != null) handler.execute(editor, char, ctx)
+        val gen = sessionGen
+        stop(editor, keepBackdrop = true)
+        if (handler != null && ctx != null)
+            ApplicationManager.getApplication().invokeLater {
+                if (sessionGen == gen) {
+                    handler.execute(editor, char, ctx)
+                    if (sessionGen == gen) clearBackdrops()
+                }
+            }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -313,6 +329,7 @@ object LeapHandler {
                 jumpTo(t.editor, adjustedOffset(t.offset, mode))
                 if (targets.size == 1) { stop(editor); return }
             }
+            showBackdrop(editor)
             phase = Phase.SELECT
 
             val editors = if (cfg.searchAcrossSplits) visibleEditors(editor) else listOf(editor)
@@ -362,6 +379,7 @@ object LeapHandler {
             jumpTo(t.editor, adjustedOffset(t.offset, mode))
             if (targets.size == 1) { stop(editor); return }
         }
+        showBackdrop(editor)
         phase = Phase.SELECT
 
         val marksByEditor = targets.groupBy { it.editor }
@@ -552,6 +570,7 @@ object LeapHandler {
         val ls = lastSearch ?: return
         if (isActive) stop(editor)
         isActive = true
+        sessionGen++
         mode = if (reversed) ls.mode.flipped() else ls.mode
         phase = Phase.CHAR1
         char1 = ls.char1; char2 = ls.char2
@@ -561,8 +580,8 @@ object LeapHandler {
         originOffset = editor.caretModel.offset
         visualAnchor = captureVisualAnchor(editor)
         installHandlers(editor)
-        showBackdrop(editor)
-        computeAndShow(editor)
+        computeAndShow(editor)  // showBackdrop is called inside only when matches are found
+        lastSearch = ls  // direction is always relative to the original search, not the repeat
     }
 
     fun startRemote(event: AnActionEvent) {
@@ -678,6 +697,7 @@ object LeapHandler {
     // ══════════════════════════════════════════════════════════════════════════
 
     private fun showBackdrop(editor: Editor) {
+        if (backdropMap.containsKey(editor)) return  // reuse backdrop from previous session to avoid flash
         val (start, end) = SearchEngine.visibleRange(editor)
         val attrs = TextAttributes().apply {
             foregroundColor = java.awt.Color(150, 150, 150, 120)
