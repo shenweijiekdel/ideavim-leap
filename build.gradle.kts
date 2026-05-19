@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.shenweijie"
-version = "0.3.0"
+version = "0.4.0"
 
 repositories {
     mavenCentral()
@@ -26,14 +26,11 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         name = "vim-leap"
-        version = "0.3.0"
+        version = "0.4.0"
         description = "leap.nvim port for IdeaVim — 2-char search labels, safe-label autojump, label groups, traversal, equivalence classes, remote operation."
         changeNotes = """
             <ul>
-              <li>; / , repeat: labels now update correctly after each navigation step</li>
-              <li>; / , repeat: fixed direction — , always goes opposite to original search</li>
-              <li>; / , repeat: eliminated flash/flicker between consecutive presses</li>
-              <li>Nearest match highlight color changed to orange to distinguish from labels</li>
+              <li>Visual mode: selection now extends correctly when jumping via label or Enter — previously only ; / , repeat updated the selection</li>
             </ul>
         """.trimIndent()
         ideaVersion {

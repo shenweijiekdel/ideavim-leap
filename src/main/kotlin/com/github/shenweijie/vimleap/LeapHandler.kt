@@ -191,8 +191,9 @@ object LeapHandler {
                         return
                     }
                 }
+                val anchor = visualAnchor
                 stop(editor)
-                jumpTo(t.editor, adjustedOffset(t.offset, mode))
+                jumpTo(t.editor, adjustedOffset(t.offset, mode), anchor)
                 return
             }
             // Narrow: update advance indices
@@ -287,8 +288,9 @@ object LeapHandler {
                             doTraverseStep(editor, forward = true)
                         } else if (targets.isNotEmpty()) {
                             val t = targets.first()
+                            val anchor = visualAnchor
                             stop(editor)
-                            jumpTo(t.editor, adjustedOffset(t.offset, mode))
+                            jumpTo(t.editor, adjustedOffset(t.offset, mode), anchor)
                         } else {
                             stop(editor)
                         }
@@ -601,9 +603,8 @@ object LeapHandler {
     // Jump / select helpers
     // ══════════════════════════════════════════════════════════════════════════
 
-    private fun jumpTo(editor: Editor, offset: Int) {
+    private fun jumpTo(editor: Editor, offset: Int, anchor: Int = visualAnchor) {
         val clamped = offset.coerceIn(0, editor.document.textLength - 1)
-        val anchor = visualAnchor
         WriteIntentReadAction.run(Runnable {
             editor.caretModel.moveToOffset(clamped)
             if (anchor >= 0) {
